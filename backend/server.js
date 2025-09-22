@@ -7,6 +7,8 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+// Import routes
+const productRoutes = require('./routes/products');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -51,6 +53,8 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API Routes
+app.use('/api/products', productRoutes);
 
 // Global error handler
 app.use((error, req, res, next) => {
