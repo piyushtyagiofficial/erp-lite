@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  PlusIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  MagnifyingGlassIcon,
+  ChartBarIcon,
+  ChartPieIcon,
+  CubeIcon
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { BarChart, PieChart, DoughnutChart } from '../components/charts';
 import { productsService, suppliersService } from '../services/api';
 
 const Products = () => {
@@ -90,6 +99,79 @@ const Products = () => {
     }
   };
 
+  // Analytics chart data preparation
+  const getStockLevelsData = () => {
+    const stockCategories = products.reduce((acc, product) => {
+      if (product.quantity === 0) {
+        acc.outOfStock++;
+      } else if (product.quantity <= product.minStockLevel) {
+        acc.lowStock++;
+      } else if (product.quantity <= product.minStockLevel * 2) {
+        acc.mediumStock++;
+      } else {
+        acc.highStock++;
+      }
+      return acc;
+    }, { outOfStock: 0, lowStock: 0, mediumStock: 0, highStock: 0 });
+
+    return {
+      labels: ['Out of Stock', 'Low Stock', 'Medium Stock', 'Well Stocked'],
+      values: [stockCategories.outOfStock, stockCategories.lowStock, stockCategories.mediumStock, stockCategories.highStock]
+    };
+  };
+
+  const getSupplierDistributionData = () => {
+    const supplierCounts = products.reduce((acc, product) => {
+      const supplierName = product.supplier?.name || 'No Supplier';
+      acc[supplierName] = (acc[supplierName] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      labels: Object.keys(supplierCounts),
+      values: Object.values(supplierCounts)
+    };
+  };
+
+  const getInventoryValueData = () => {
+    const sortedProducts = [...products]
+      .map(product => ({
+        name: product.name,
+        value: product.quantity * product.price
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10); // Top 10 by value
+
+    return {
+      labels: sortedProducts.map(p => p.name),
+      values: sortedProducts.map(p => p.value),
+      label: 'Inventory Value ($)'
+    };
+  };
+
+  const getPriceRangeData = () => {
+    const priceRanges = products.reduce((acc, product) => {
+      const price = product.price;
+      if (price < 10) {
+        acc.under10++;
+      } else if (price < 50) {
+        acc.under50++;
+      } else if (price < 100) {
+        acc.under100++;
+      } else if (price < 500) {
+        acc.under500++;
+      } else {
+        acc.over500++;
+      }
+      return acc;
+    }, { under10: 0, under50: 0, under100: 0, under500: 0, over500: 0 });
+
+    return {
+      labels: ['Under $10', '$10-$50', '$50-$100', '$100-$500', 'Over $500'],
+      values: [priceRanges.under10, priceRanges.under50, priceRanges.under100, priceRanges.under500, priceRanges.over500]
+    };
+  };
+
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingProduct(null);
@@ -134,6 +216,117 @@ const Products = () => {
           Add Product
         </button>
       </div>
+
+      {/* Analytics Charts */}
+      {products.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900 mb-2">Product Analytics</h2>
+            <p className="text-secondary-600">Visual insights into your product inventory</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            {/* Stock Level Distribution */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Stock Level Distribution</h3>
+                <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
+                  <ChartPieIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <PieChart 
+                data={getStockLevelsData()}
+                title=""
+                height={300}
+                colors={[
+                  'rgba(239, 68, 68, 0.8)',   // Red for out of stock
+                  'rgba(245, 158, 11, 0.8)',  // Orange for low stock
+                  'rgba(59, 130, 246, 0.8)',  // Blue for medium stock
+                  'rgba(16, 185, 129, 0.8)'   // Green for well stocked
+                ]}
+              />
+            </div>
+
+            {/* Top Products by Value */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Top Products by Inventory Value</h3>
+                <div className="p-3 bg-gradient-to-br from-success-500 to-success-600 rounded-xl">
+                  <ChartBarIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <BarChart 
+                data={getInventoryValueData()}
+                title=""
+                height={300}
+                backgroundColor={[
+                  'rgba(79, 70, 229, 0.8)',
+                  'rgba(16, 185, 129, 0.8)',
+                  'rgba(245, 158, 11, 0.8)',
+                  'rgba(239, 68, 68, 0.8)',
+                  'rgba(139, 92, 246, 0.8)',
+                  'rgba(236, 72, 153, 0.8)',
+                  'rgba(6, 182, 212, 0.8)',
+                  'rgba(34, 197, 94, 0.8)',
+                  'rgba(251, 146, 60, 0.8)',
+                  'rgba(168, 85, 247, 0.8)'
+                ]}
+              />
+            </div>
+
+            {/* Supplier Distribution */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Products by Supplier</h3>
+                <div className="p-3 bg-gradient-to-br from-warning-500 to-warning-600 rounded-xl">
+                  <CubeIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <DoughnutChart 
+                data={getSupplierDistributionData()}
+                title=""
+                height={300}
+                centerText={{
+                  value: products.length.toString(),
+                  label: 'Total Products'
+                }}
+                colors={[
+                  'rgba(79, 70, 229, 0.8)',
+                  'rgba(16, 185, 129, 0.8)',
+                  'rgba(245, 158, 11, 0.8)',
+                  'rgba(239, 68, 68, 0.8)',
+                  'rgba(139, 92, 246, 0.8)',
+                  'rgba(236, 72, 153, 0.8)',
+                  'rgba(6, 182, 212, 0.8)',
+                  'rgba(34, 197, 94, 0.8)'
+                ]}
+              />
+            </div>
+
+            {/* Price Range Distribution */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Price Range Distribution</h3>
+                <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl">
+                  <ChartBarIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <BarChart 
+                data={getPriceRangeData()}
+                title=""
+                height={300}
+                backgroundColor={[
+                  'rgba(34, 197, 94, 0.8)',   // Green for low prices
+                  'rgba(59, 130, 246, 0.8)',  // Blue
+                  'rgba(139, 92, 246, 0.8)',  // Purple  
+                  'rgba(245, 158, 11, 0.8)',  // Orange
+                  'rgba(239, 68, 68, 0.8)'    // Red for high prices
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6">

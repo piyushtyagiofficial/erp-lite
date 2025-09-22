@@ -4,9 +4,12 @@ import {
   ExclamationTriangleIcon,
   CurrencyDollarIcon,
   SparklesIcon,
+  ChartBarIcon,
+  ChartPieIcon,
 } from '@heroicons/react/24/outline';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { dashboardService } from '../services/api';
+import { BarChart, PieChart, LineChart, DoughnutChart } from '../components/charts';
+import { dashboardService, productsService } from '../services/api';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -15,12 +18,16 @@ const Dashboard = () => {
     totalInventoryValue: 0,
   });
   const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [reorderSuggestions, setReorderSuggestions] = useState([]);
+  const [monthlyTrends, setMonthlyTrends] = useState([]);
+  const [topSellingProducts, setTopSellingProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingAI, setLoadingAI] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
+    fetchAllProducts();
     fetchReorderSuggestions();
   }, []);
 
@@ -29,10 +36,21 @@ const Dashboard = () => {
       const data = await dashboardService.getStats();
       setStats(data.stats);
       setLowStockProducts(data.lowStockProducts);
+      setMonthlyTrends(data.monthlyTrends || []);
+      setTopSellingProducts(data.topSellingProducts || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAllProducts = async () => {
+    try {
+      const data = await productsService.getAll();
+      setAllProducts(data);
+    } catch (error) {
+      console.error('Error fetching all products:', error);
     }
   };
 
@@ -46,6 +64,117 @@ const Dashboard = () => {
     } finally {
       setLoadingAI(false);
     }
+  };
+
+  // Prepare chart data
+  const getStockDistributionData = () => {
+    const stockLevels = lowStockProducts.reduce((acc, product) => {
+      if (product.quantity === 0) {
+        acc.outOfStock++;
+      } else if (product.quantity <= product.minStockLevel) {
+        acc.lowStock++;
+      } else if (product.quantity <= product.minStockLevel * 2) {
+        acc.mediumStock++;
+      } else {
+        acc.highStock++;
+      }
+      return acc;
+    }, { outOfStock: 0, lowStock: 0, mediumStock: 0, highStock: 0 });
+
+    // Add well-stocked products
+    const wellStockedCount = Math.max(0, stats.totalProducts - lowStockProducts.length);
+    stockLevels.highStock += wellStockedCount;
+
+    return {
+      labels: ['Out of Stock', 'Low Stock', 'Medium Stock', 'Well Stocked'],
+      values: [stockLevels.outOfStock, stockLevels.lowStock, stockLevels.mediumStock, stockLevels.highStock]
+    };
+  };
+
+  const getTopProductsData = () => {
+    if (!topSellingProducts.length) {
+      return { labels: ['No Data'], values: [1] };
+    }
+
+    return {
+      labels: topSellingProducts.map(p => p.name || 'Unknown'),
+      values: topSellingProducts.map(p => p.totalSold || 0),
+      label: 'Units Sold'
+    };
+  };
+
+  const getMonthlyTrendsData = () => {
+    if (!monthlyTrends.length) {
+      return {
+        labels: ['No Data'],
+        datasets: [
+          { label: 'Sales', values: [0] },
+          { label: 'Purchases', values: [0] }
+        ]
+      };
+    }
+
+    // Group by month and type
+    const trendsByMonth = monthlyTrends.reduce((acc, trend) => {
+      const monthKey = `${trend._id.year}-${String(trend._id.month).padStart(2, '0')}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = { sales: 0, purchases: 0 };
+      }
+      if (trend._id.type === 'sale') {
+        acc[monthKey].sales += trend.totalAmount || 0;
+      } else if (trend._id.type === 'purchase') {
+        acc[monthKey].purchases += trend.totalAmount || 0;
+      }
+      return acc;
+    }, {});
+
+    const sortedMonths = Object.keys(trendsByMonth).sort();
+    const labels = sortedMonths.map(month => {
+      const [year, monthNum] = month.split('-');
+      const date = new Date(year, monthNum - 1);
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Sales ($)',
+          values: sortedMonths.map(month => trendsByMonth[month].sales)
+        },
+        {
+          label: 'Purchases ($)',
+          values: sortedMonths.map(month => trendsByMonth[month].purchases)
+        }
+      ]
+    };
+  };
+
+  const getInventoryValueData = () => {
+    // Use all products to get complete inventory value distribution by supplier
+    const supplierValues = allProducts.reduce((acc, product) => {
+      const supplierName = product.supplier?.name || 'No Supplier';
+      const value = (product.quantity || 0) * (product.price || 0);
+      acc[supplierName] = (acc[supplierName] || 0) + value;
+      return acc;
+    }, {});
+
+    // If no products, create a simple display
+    if (Object.keys(supplierValues).length === 0) {
+      return {
+        labels: ['Total Inventory'],
+        values: [stats.totalInventoryValue || 0]
+      };
+    }
+
+    // Sort by value to show largest suppliers first
+    const sortedSuppliers = Object.entries(supplierValues)
+      .sort(([,a], [,b]) => b - a);
+
+    return {
+      labels: sortedSuppliers.map(([name]) => name),
+      values: sortedSuppliers.map(([,value]) => value)
+    };
   };
 
   const statCards = [
@@ -119,6 +248,102 @@ const Dashboard = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+        {/* Stock Distribution Pie Chart */}
+        <div className="card-premium">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900">Stock Distribution</h2>
+            <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
+              <ChartPieIcon className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <PieChart 
+            data={getStockDistributionData()}
+            title=""
+            height={350}
+            colors={[
+              'rgba(239, 68, 68, 0.8)',   // Red for out of stock
+              'rgba(245, 158, 11, 0.8)',  // Orange for low stock
+              'rgba(59, 130, 246, 0.8)',  // Blue for medium stock
+              'rgba(16, 185, 129, 0.8)'   // Green for well stocked
+            ]}
+          />
+        </div>
+
+        {/* Monthly Sales vs Purchases Line Chart */}
+        <div className="card-premium">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900">Monthly Trends</h2>
+            <div className="p-3 bg-gradient-to-br from-success-500 to-success-600 rounded-xl">
+              <ChartBarIcon className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <LineChart 
+            data={getMonthlyTrendsData()}
+            title=""
+            height={350}
+            colors={[
+              'rgba(16, 185, 129, 1)',   // Green for sales
+              'rgba(79, 70, 229, 1)'     // Purple for purchases
+            ]}
+            filled={true}
+          />
+        </div>
+      </div>
+
+      {/* Additional Charts Row */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-10">
+        {/* Top Selling Products Bar Chart */}
+        <div className="card-premium">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900">Top Selling Products</h2>
+            <div className="p-3 bg-gradient-to-br from-warning-500 to-warning-600 rounded-xl">
+              <ChartBarIcon className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <BarChart 
+            data={getTopProductsData()}
+            title=""
+            height={350}
+            backgroundColor={[
+              'rgba(79, 70, 229, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(239, 68, 68, 0.8)',
+              'rgba(139, 92, 246, 0.8)'
+            ]}
+          />
+        </div>
+
+        {/* Inventory Value by Company/Supplier Doughnut Chart */}
+        <div className="card-premium">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900">Inventory Value by Company</h2>
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl">
+              <CurrencyDollarIcon className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <PieChart 
+            data={getInventoryValueData()}
+            title=""
+            height={350}
+            colors={[
+              'rgba(79, 70, 229, 0.8)',
+              'rgba(16, 185, 129, 0.8)',
+              'rgba(245, 158, 11, 0.8)',
+              'rgba(239, 68, 68, 0.8)',
+              'rgba(139, 92, 246, 0.8)',
+              'rgba(236, 72, 153, 0.8)',
+              'rgba(6, 182, 212, 0.8)',
+              'rgba(34, 197, 94, 0.8)',
+              'rgba(251, 146, 60, 0.8)',
+              'rgba(168, 85, 247, 0.8)'
+            ]}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

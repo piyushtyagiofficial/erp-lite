@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, PencilIcon, TrashIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  PlusIcon, 
+  PencilIcon, 
+  TrashIcon, 
+  MagnifyingGlassIcon,
+  ChartBarIcon,
+  ChartPieIcon,
+  TruckIcon,
+  UserGroupIcon
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { suppliersService } from '../services/api';
+import { BarChart, PieChart, DoughnutChart } from '../components/charts';
+import { suppliersService, productsService } from '../services/api';
 
 const Suppliers = () => {
   const [suppliers, setSuppliers] = useState([]);
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState(null);
@@ -21,6 +32,7 @@ const Suppliers = () => {
 
   useEffect(() => {
     fetchSuppliers();
+    fetchProducts();
   }, []);
 
   const fetchSuppliers = async () => {
@@ -31,6 +43,15 @@ const Suppliers = () => {
       toast.error('Error fetching suppliers');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const data = await productsService.getAll();
+      setProducts(data);
+    } catch (error) {
+      console.error('Error fetching products:', error);
     }
   };
 
@@ -87,6 +108,33 @@ const Suppliers = () => {
     });
   };
 
+  // Analytics chart data preparation
+  const getSupplierProductDistribution = () => {
+    const supplierProducts = products.reduce((acc, product) => {
+      const supplierName = product.supplier?.name || 'No Supplier';
+      acc[supplierName] = (acc[supplierName] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      labels: Object.keys(supplierProducts),
+      values: Object.values(supplierProducts)
+    };
+  };
+
+  const getSupplierStatus = () => {
+    const statusCounts = suppliers.reduce((acc, supplier) => {
+      const status = supplier.isActive ? 'Active' : 'Inactive';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      labels: Object.keys(statusCounts),
+      values: Object.values(statusCounts)
+    };
+  };
+
   const filteredSuppliers = suppliers.filter(supplier =>
     supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     supplier.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -117,6 +165,66 @@ const Suppliers = () => {
           Add Supplier
         </button>
       </div>
+
+      {/* Supplier Analytics */}
+      {suppliers.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900 mb-2">Supplier Analytics</h2>
+            <p className="text-secondary-600">Insights into supplier performance and relationships</p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Product Distribution by Supplier */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Product Distribution by Supplier</h3>
+                <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
+                  <ChartPieIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <PieChart 
+                data={getSupplierProductDistribution()}
+                title=""
+                height={300}
+                colors={[
+                  'rgba(79, 70, 229, 0.8)',
+                  'rgba(16, 185, 129, 0.8)',
+                  'rgba(245, 158, 11, 0.8)',
+                  'rgba(239, 68, 68, 0.8)',
+                  'rgba(139, 92, 246, 0.8)',
+                  'rgba(236, 72, 153, 0.8)',
+                  'rgba(6, 182, 212, 0.8)',
+                  'rgba(34, 197, 94, 0.8)'
+                ]}
+              />
+            </div>
+
+            {/* Supplier Status Distribution */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Supplier Status</h3>
+                <div className="p-3 bg-gradient-to-br from-warning-500 to-warning-600 rounded-xl">
+                  <UserGroupIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <DoughnutChart 
+                data={getSupplierStatus()}
+                title=""
+                height={300}
+                centerText={{
+                  value: suppliers.length.toString(),
+                  label: 'Total Suppliers'
+                }}
+                colors={[
+                  'rgba(16, 185, 129, 0.8)',  // Green for active
+                  'rgba(239, 68, 68, 0.8)'    // Red for inactive
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="mb-6">

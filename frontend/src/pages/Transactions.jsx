@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { 
+  PlusIcon, 
+  MagnifyingGlassIcon,
+  ChartBarIcon,
+  ChartPieIcon,
+  CurrencyDollarIcon,
+  ArrowTrendingUpIcon
+} from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import Modal from '../components/Modal';
 import LoadingSpinner from '../components/LoadingSpinner';
+import { BarChart, PieChart, LineChart, DoughnutChart } from '../components/charts';
 import { transactionsService, productsService } from '../services/api';
 
 const Transactions = () => {
@@ -70,6 +78,141 @@ const fetchTransactions = async () => {
     });
   };
 
+  // Analytics chart data preparation
+  const getTransactionTypeData = () => {
+    const typeCounts = transactions.reduce((acc, transaction) => {
+      acc[transaction.type] = (acc[transaction.type] || 0) + 1;
+      return acc;
+    }, {});
+
+    return {
+      labels: Object.keys(typeCounts).map(type => type.charAt(0).toUpperCase() + type.slice(1)),
+      values: Object.values(typeCounts)
+    };
+  };
+
+  const getMonthlyTransactionTrends = () => {
+    if (!transactions.length) {
+      return {
+        labels: ['No Data'],
+        datasets: [
+          { label: 'Sales', values: [0] },
+          { label: 'Purchases', values: [0] }
+        ]
+      };
+    }
+
+    // Group transactions by month
+    const monthlyData = transactions.reduce((acc, transaction) => {
+      const date = new Date(transaction.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = { sales: 0, purchases: 0, salesAmount: 0, purchasesAmount: 0 };
+      }
+      
+      if (transaction.type === 'sale') {
+        acc[monthKey].sales++;
+        acc[monthKey].salesAmount += transaction.totalAmount || (transaction.quantity * transaction.price);
+      } else {
+        acc[monthKey].purchases++;
+        acc[monthKey].purchasesAmount += transaction.totalAmount || (transaction.quantity * transaction.price);
+      }
+      
+      return acc;
+    }, {});
+
+    const sortedMonths = Object.keys(monthlyData).sort();
+    const labels = sortedMonths.map(month => {
+      const [year, monthNum] = month.split('-');
+      const date = new Date(year, monthNum - 1);
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Sales Count',
+          values: sortedMonths.map(month => monthlyData[month].sales)
+        },
+        {
+          label: 'Purchases Count',
+          values: sortedMonths.map(month => monthlyData[month].purchases)
+        }
+      ]
+    };
+  };
+
+  const getRevenueVsCostData = () => {
+    const monthlyRevenue = transactions.reduce((acc, transaction) => {
+      const date = new Date(transaction.createdAt);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[monthKey]) {
+        acc[monthKey] = { revenue: 0, cost: 0 };
+      }
+      
+      const amount = transaction.totalAmount || (transaction.quantity * transaction.price);
+      if (transaction.type === 'sale') {
+        acc[monthKey].revenue += amount;
+      } else {
+        acc[monthKey].cost += amount;
+      }
+      
+      return acc;
+    }, {});
+
+    const sortedMonths = Object.keys(monthlyRevenue).sort();
+    const labels = sortedMonths.map(month => {
+      const [year, monthNum] = month.split('-');
+      const date = new Date(year, monthNum - 1);
+      return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    });
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Revenue ($)',
+          values: sortedMonths.map(month => monthlyRevenue[month].revenue)
+        },
+        {
+          label: 'Cost ($)',
+          values: sortedMonths.map(month => monthlyRevenue[month].cost)
+        }
+      ]
+    };
+  };
+
+  const getTopProductsData = () => {
+    const productStats = transactions.reduce((acc, transaction) => {
+      const productName = transaction.product?.name || 'Unknown Product';
+      if (!acc[productName]) {
+        acc[productName] = { sales: 0, purchases: 0, totalVolume: 0 };
+      }
+      
+      if (transaction.type === 'sale') {
+        acc[productName].sales += transaction.quantity;
+      } else {
+        acc[productName].purchases += transaction.quantity;
+      }
+      acc[productName].totalVolume += transaction.quantity;
+      
+      return acc;
+    }, {});
+
+    const sortedProducts = Object.entries(productStats)
+      .sort(([,a], [,b]) => b.totalVolume - a.totalVolume)
+      .slice(0, 10);
+
+    return {
+      labels: sortedProducts.map(([name]) => name),
+      values: sortedProducts.map(([,stats]) => stats.totalVolume),
+      label: 'Total Volume'
+    };
+  };
+
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          transaction.notes?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -103,6 +246,102 @@ const fetchTransactions = async () => {
           New Transaction
         </button>
       </div>
+
+      {/* Transaction Analytics */}
+      {transactions.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold text-secondary-900 mb-2">Transaction Analytics</h2>
+            <p className="text-secondary-600">Visual insights into your transaction patterns and trends</p>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            {/* Transaction Type Distribution */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Transaction Type Distribution</h3>
+                <div className="p-3 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl">
+                  <ChartPieIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <PieChart 
+                data={getTransactionTypeData()}
+                title=""
+                height={300}
+                colors={[
+                  'rgba(16, 185, 129, 0.8)',  // Green for sales
+                  'rgba(79, 70, 229, 0.8)'    // Purple for purchases
+                ]}
+              />
+            </div>
+
+            {/* Monthly Transaction Trends */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Monthly Transaction Trends</h3>
+                <div className="p-3 bg-gradient-to-br from-success-500 to-success-600 rounded-xl">
+                  <ArrowTrendingUpIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <LineChart 
+                data={getMonthlyTransactionTrends()}
+                title=""
+                height={300}
+                colors={[
+                  'rgba(16, 185, 129, 1)',   // Green for sales
+                  'rgba(79, 70, 229, 1)'     // Purple for purchases
+                ]}
+              />
+            </div>
+
+            {/* Revenue vs Cost Analysis */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Revenue vs Cost Analysis</h3>
+                <div className="p-3 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl">
+                  <CurrencyDollarIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <BarChart 
+                data={getRevenueVsCostData()}
+                title=""
+                height={300}
+                backgroundColor={[
+                  'rgba(16, 185, 129, 0.8)',  // Green for revenue
+                  'rgba(239, 68, 68, 0.8)'    // Red for cost
+                ]}
+              />
+            </div>
+
+            {/* Top Products by Volume */}
+            <div className="card-premium">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-secondary-900">Top Products by Transaction Volume</h3>
+                <div className="p-3 bg-gradient-to-br from-warning-500 to-warning-600 rounded-xl">
+                  <ChartBarIcon className="h-6 w-6 text-white" />
+                </div>
+              </div>
+              <BarChart 
+                data={getTopProductsData()}
+                title=""
+                height={300}
+                backgroundColor={[
+                  'rgba(79, 70, 229, 0.8)',
+                  'rgba(16, 185, 129, 0.8)',
+                  'rgba(245, 158, 11, 0.8)',
+                  'rgba(239, 68, 68, 0.8)',
+                  'rgba(139, 92, 246, 0.8)',
+                  'rgba(236, 72, 153, 0.8)',
+                  'rgba(6, 182, 212, 0.8)',
+                  'rgba(34, 197, 94, 0.8)',
+                  'rgba(251, 146, 60, 0.8)',
+                  'rgba(168, 85, 247, 0.8)'
+                ]}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
