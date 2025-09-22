@@ -65,6 +65,25 @@ export const suppliersService = {
   },
 };
 
+// Transactions API
+export const transactionsService = {
+  getAll: async () => {
+    const response = await api.get('/transactions');
+    return response.data;
+  },
+  
+  getById: async (id) => {
+    const response = await api.get(`/transactions/${id}`);
+    return response.data;
+  },
+  
+  create: async (transactionData) => {
+    const response = await api.post('/transactions', transactionData);
+    return response.data;
+  },
+};
+
+
 // Dashboard API
 export const dashboardService = {
   getStats: async () => {
