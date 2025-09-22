@@ -36,6 +36,15 @@ const LineChart = ({
   filled = false,
   className = ''
 }) => {
+  // Safety check for data
+  if (!data || !data.labels) {
+    return (
+      <div className={`h-${height} ${className} flex items-center justify-center`} style={{ height: `${height}px` }}>
+        <p className="text-gray-500">No data available</p>
+      </div>
+    );
+  }
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -127,7 +136,7 @@ const LineChart = ({
 
   const createDataset = (dataset, index) => ({
     label: dataset.label,
-    data: dataset.values,
+    data: dataset.values || [],
     borderColor: colors[index % colors.length],
     backgroundColor: filled 
       ? colors[index % colors.length].replace('1)', '0.1)')
@@ -143,7 +152,7 @@ const LineChart = ({
     labels: data.labels,
     datasets: Array.isArray(data.datasets) 
       ? data.datasets.map(createDataset)
-      : [createDataset({ label: data.label || 'Data', values: data.values }, 0)]
+      : [createDataset({ label: data.label || 'Data', values: data.values || [] }, 0)]
   };
 
   return (

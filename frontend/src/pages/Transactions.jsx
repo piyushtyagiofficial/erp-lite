@@ -145,6 +145,16 @@ const fetchTransactions = async () => {
   };
 
   const getRevenueVsCostData = () => {
+    if (!transactions.length) {
+      return {
+        labels: ['No Data'],
+        datasets: [
+          { label: 'Revenue ($)', values: [0] },
+          { label: 'Cost ($)', values: [0] }
+        ]
+      };
+    }
+
     const monthlyRevenue = transactions.reduce((acc, transaction) => {
       const date = new Date(transaction.createdAt);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -186,6 +196,14 @@ const fetchTransactions = async () => {
   };
 
   const getTopProductsData = () => {
+    if (!transactions.length) {
+      return {
+        labels: ['No Data'],
+        values: [0],
+        label: 'Total Volume'
+      };
+    }
+
     const productStats = transactions.reduce((acc, transaction) => {
       const productName = transaction.product?.name || 'Unknown Product';
       if (!acc[productName]) {
@@ -243,7 +261,7 @@ const fetchTransactions = async () => {
           className="btn-primary flex items-center"
         >
           <PlusIcon className="h-5 w-5 mr-2" />
-          New Transaction
+          Record Transaction
         </button>
       </div>
 
@@ -424,7 +442,7 @@ const fetchTransactions = async () => {
       <Modal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
-        title="New Transaction"
+        title="Record Transaction"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

@@ -25,6 +25,15 @@ const DoughnutChart = ({
   cutout = '60%',
   className = ''
 }) => {
+  // Safety check for data
+  if (!data || !data.labels || !data.values) {
+    return (
+      <div className={`h-${height} ${className} flex items-center justify-center`} style={{ height: `${height}px` }}>
+        <p className="text-gray-500">No data available</p>
+      </div>
+    );
+  }
+
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -108,9 +117,9 @@ const DoughnutChart = ({
     labels: data.labels,
     datasets: [
       {
-        data: data.values,
-        backgroundColor: colors.slice(0, data.values.length),
-        borderColor: colors.slice(0, data.values.length).map(color => 
+        data: data.values || [],
+        backgroundColor: colors.slice(0, (data.values || []).length),
+        borderColor: colors.slice(0, (data.values || []).length).map(color => 
           color.replace('0.8', '1')
         ),
         borderWidth: 2,

@@ -27,6 +27,14 @@ const BarChart = ({
   borderColor = ['rgba(79, 70, 229, 1)', 'rgba(16, 185, 129, 1)', 'rgba(245, 158, 11, 1)'],
   className = ''
 }) => {
+  // Safety check for data
+  if (!data || !data.labels) {
+    return (
+      <div className={`h-${height} ${className} flex items-center justify-center`} style={{ height: `${height}px` }}>
+        <p className="text-gray-500">No data available</p>
+      </div>
+    );
+  }
   const options = {
     responsive: true,
     maintainAspectRatio: false,
@@ -98,23 +106,38 @@ const BarChart = ({
     }
   };
 
+  // Handle both single dataset (with values) and multiple datasets (with datasets array)
   const chartData = {
     labels: data.labels,
-    datasets: [
-      {
-        label: data.label || 'Data',
-        data: data.values,
+    datasets: data.datasets ? 
+      // Multiple datasets format
+      data.datasets.map((dataset, index) => ({
+        label: dataset.label || 'Data',
+        data: dataset.values || [],
         backgroundColor: Array.isArray(backgroundColor) 
-          ? backgroundColor.slice(0, data.values.length)
+          ? backgroundColor[index] || backgroundColor[0]
           : backgroundColor,
         borderColor: Array.isArray(borderColor)
-          ? borderColor.slice(0, data.values.length)
+          ? borderColor[index] || borderColor[0]
           : borderColor,
         borderWidth: 2,
         borderRadius: 6,
         borderSkipped: false,
-      }
-    ]
+      })) :
+      // Single dataset format
+      [{
+        label: data.label || 'Data',
+        data: data.values || [],
+        backgroundColor: Array.isArray(backgroundColor) 
+          ? backgroundColor.slice(0, (data.values || []).length)
+          : backgroundColor,
+        borderColor: Array.isArray(borderColor)
+          ? borderColor.slice(0, (data.values || []).length)
+          : borderColor,
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
   };
 
   return (
