@@ -16,6 +16,7 @@ A modern, lightweight Enterprise Resource Planning (ERP) system built with React
 - **Transaction Trends**: Monthly transaction patterns, revenue vs cost analysis, and volume tracking
 - **Supplier Analytics**: Performance metrics, product distribution, and supplier status monitoring
 - **Dashboard Metrics**: Real-time KPIs including total products, suppliers, recent transactions, and inventory value
+- **AI-Powered Reorder Suggestions**: Google Gemini AI integration for intelligent inventory reorder recommendations based on historical sales data, current stock levels, and business patterns
 
 ### User Experience
 - **Responsive Design**: Mobile-first design approach with Tailwind CSS
@@ -40,6 +41,7 @@ A modern, lightweight Enterprise Resource Planning (ERP) system built with React
 - **Node.js**: Server-side JavaScript runtime
 - **Express.js 5.1.0**: Web application framework
 - **MongoDB & Mongoose**: NoSQL database with ODM
+- **Google Gemini AI**: Advanced AI integration for intelligent reorder suggestions and inventory optimization
 - **Security Middleware**:
   - Helmet: Security headers
   - CORS: Cross-origin resource sharing
@@ -127,7 +129,7 @@ cp .env.example .env
 PORT=3001
 MONGODB_URI=mongodb://localhost:27017/erp-lite
 NODE_ENV=development
-GEMINI_API_KEY=your_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 5. Start the backend server:
@@ -193,6 +195,47 @@ http://localhost:3001/api
 
 #### Dashboard
 - `GET /dashboard/overview` - Get dashboard metrics and analytics
+- `GET /dashboard/reorder-suggestions` - Get AI-powered reorder suggestions using Google Gemini
+
+## AI Integration
+
+### Google Gemini AI for Reorder Suggestions
+
+ERP Lite integrates with Google's Gemini AI to provide intelligent inventory reorder recommendations. The AI analyzes:
+
+- **Historical Sales Data**: Past 3 months of transaction history
+- **Current Stock Levels**: Real-time inventory quantities
+- **Minimum Stock Thresholds**: User-defined minimum stock levels
+- **Sales Velocity**: Average monthly sales patterns
+- **Seasonal Trends**: Pattern recognition for demand fluctuations
+
+#### How It Works
+
+1. **Data Collection**: System gathers product data including current stock, minimum levels, and sales history
+2. **AI Analysis**: Gemini AI processes the data using advanced machine learning algorithms
+3. **Smart Recommendations**: AI generates specific reorder quantities with detailed reasoning
+4. **Fallback System**: Rule-based suggestions are provided if AI service is unavailable
+
+#### Sample AI Output
+
+The AI provides structured recommendations in the format:
+```json
+{
+  "productName": "Product Name",
+  "currentStock": 15,
+  "suggestedQuantity": 100,
+  "reason": "Stock below minimum level with consistent sales velocity of 25 units/month"
+}
+```
+
+#### Configuration
+
+To enable AI reorder suggestions, configure your Gemini API key in the environment variables:
+```env
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+If no API key is provided, the system gracefully falls back to rule-based suggestions ensuring continuous operation.
 
 ### Request/Response Format
 
