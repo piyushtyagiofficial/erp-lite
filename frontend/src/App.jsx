@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
+import Suppliers from './pages/Suppliers';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/products" element={<Products />} />
+            <Route path="/suppliers" element={<Suppliers />} />
           </Routes>
         </Layout>
       </div>
