@@ -24,7 +24,7 @@ const transactionSchema = new mongoose.Schema({
   },
   totalAmount: {
     type: Number,
-    required: true
+    required: false // Will be calculated automatically in pre-save middleware
   },
   supplier: {
     type: mongoose.Schema.Types.ObjectId,
@@ -60,6 +60,7 @@ const transactionSchema = new mongoose.Schema({
 
 // Calculate total amount before saving
 transactionSchema.pre('save', function(next) {
+  // Always calculate totalAmount to ensure accuracy
   this.totalAmount = this.quantity * this.price;
   next();
 });

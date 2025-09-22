@@ -9,6 +9,7 @@ const transactionSchema = Joi.object({
   product: Joi.string().required().pattern(/^[0-9a-fA-F]{24}$/),
   quantity: Joi.number().required().min(1),
   price: Joi.number().required().min(0),
+  totalAmount: Joi.number().min(0).optional(), // Optional, will be calculated if not provided
   supplier: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).allow(''),
   customer: Joi.string().max(100).trim().allow(''),
   invoiceNumber: Joi.string().max(50).trim().allow(''),
