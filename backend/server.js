@@ -10,7 +10,7 @@ require('dotenv').config();
 // Import routes
 const productRoutes = require('./routes/products');
 const supplierRoutes = require('./routes/suppliers');
-
+const transactionRoutes = require('./routes/transactions');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -58,7 +58,7 @@ app.get('/health', (req, res) => {
 // API Routes
 app.use('/api/products', productRoutes);
 app.use('/api/suppliers', supplierRoutes);
-
+app.use('/api/transactions', transactionRoutes);
 
 // Global error handler
 app.use((error, req, res, next) => {

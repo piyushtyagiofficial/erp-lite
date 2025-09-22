@@ -25,16 +25,17 @@ const Transactions = () => {
     fetchProducts();
   }, []);
 
-  const fetchTransactions = async () => {
-    try {
-      const data = await transactionsService.getAll();
-      setTransactions(data);
-    } catch (error) {
-      toast.error('Error fetching transactions');
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchTransactions = async () => {
+  try {
+    const data = await transactionsService.getAll();
+    setTransactions(data.transactions); // ✅ only set the array, not the whole object
+  } catch (error) {
+    toast.error('Error fetching transactions');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchProducts = async () => {
     try {
