@@ -38,40 +38,42 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-secondary-50 via-white to-primary-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity duration-300" onClick={() => setSidebarOpen(false)}></div>
-        <div className="relative flex flex-col h-full w-full max-w-xs sm:max-w-sm bg-white shadow-xl">
+        <div className="fixed inset-0 bg-secondary-900 bg-opacity-50 backdrop-blur-sm transition-opacity duration-300" onClick={() => setSidebarOpen(false)}></div>
+        <div className="relative flex flex-col h-full w-full max-w-xs sm:max-w-sm bg-white shadow-large border-r border-secondary-200">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
-              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white hover:bg-gray-700 transition-colors"
+              className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white hover:bg-secondary-700 transition-colors"
               onClick={() => setSidebarOpen(false)}
             >
               <XMarkIcon className="h-6 w-6 text-white" />
             </button>
           </div>
-          <div className="flex-1 flex flex-col pt-4 sm:pt-5 pb-4 overflow-y-auto">
-            <div className="flex-shrink-0 flex items-center justify-center sm:justify-start px-4">
+          <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
+            <div className="flex-shrink-0 flex items-center justify-center sm:justify-start px-6 mb-6">
               <Link to="/" onClick={() => setSidebarOpen(false)}>
-                <img src={Logo} alt="ERP Lite" className="h-8 sm:h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+                <img src={Logo} alt="ERP Lite" className="h-10 sm:h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
               </Link>
             </div>
-            <nav className="mt-4 sm:mt-5 px-2 space-y-1">
+            <nav className="mt-6 px-3 space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`group flex items-center px-3 sm:px-2 py-3 sm:py-2 text-base font-medium rounded-md transition-colors duration-200 ${
+                    className={`group flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-300 ${
                       isActive(item.href)
-                        ? 'bg-primary-100 text-primary-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 active:bg-gray-100'
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-medium'
+                        : 'text-secondary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700 active:bg-primary-100'
                     }`}
                     onClick={() => setSidebarOpen(false)}
                   >
-                    <Icon className="mr-4 h-6 w-6 flex-shrink-0" />
+                    <Icon className={`mr-4 h-6 w-6 flex-shrink-0 transition-colors ${
+                      isActive(item.href) ? 'text-white' : 'text-secondary-400 group-hover:text-primary-600'
+                    }`} />
                     {item.name}
                   </Link>
                 );
@@ -80,29 +82,31 @@ const Layout = ({ children }) => {
           </div>
         </div>
       </div>      {/* Tablet sidebar (md to lg) */}
-      <div className="hidden md:flex lg:hidden md:w-16 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex-1 flex flex-col min-h-0 bg-white shadow-lg">
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
+      <div className="hidden md:flex lg:hidden md:w-20 md:flex-col md:fixed md:inset-y-0">
+        <div className="flex-1 flex flex-col min-h-0 bg-white shadow-large border-r border-secondary-200">
+          <div className="flex-1 flex flex-col pt-6 pb-4 overflow-y-auto">
             <div className="flex items-center justify-center flex-shrink-0 px-2 mb-8">
               <Link to="/">
-                <img src={Logo} alt="ERP Lite" className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+                <img src={Logo} alt="ERP Lite" className="h-10 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
               </Link>
             </div>
-            <nav className="mt-5 flex-1 px-2 space-y-2">
+            <nav className="mt-5 flex-1 px-2 space-y-3">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`group flex items-center justify-center p-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                    className={`group flex items-center justify-center p-3 text-sm font-medium rounded-xl transition-all duration-300 ${
                       isActive(item.href)
-                        ? 'bg-primary-100 text-primary-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-medium'
+                        : 'text-secondary-600 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700'
                     }`}
                     title={item.name}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className={`h-6 w-6 transition-colors ${
+                      isActive(item.href) ? 'text-white' : 'text-secondary-400 group-hover:text-primary-600'
+                    }`} />
                   </Link>
                 );
               })}
@@ -112,28 +116,30 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:w-64 xl:w-72 lg:flex-col lg:fixed lg:inset-y-0">
-        <div className="flex-1 flex flex-col min-h-0 bg-white shadow-lg">
-          <div className="flex-1 flex flex-col pt-5 pb-4 overflow-y-auto">
-            <div className="flex items-center flex-shrink-0 px-4 xl:px-6 mb-6 lg:mb-8">
+      <div className="hidden lg:flex lg:w-72 xl:w-80 lg:flex-col lg:fixed lg:inset-y-0">
+        <div className="flex-1 flex flex-col min-h-0 bg-white shadow-large border-r border-secondary-200">
+          <div className="flex-1 flex flex-col pt-8 pb-4 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-6 xl:px-8 mb-8">
               <Link to="/">
-                <img src={Logo} alt="ERP Lite" className="h-12 lg:h-14 xl:h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+                <img src={Logo} alt="ERP Lite" className="h-14 lg:h-16 xl:h-18 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
               </Link>
             </div>
-            <nav className="mt-5 flex-1 px-2 xl:px-4 space-y-1">
+            <nav className="mt-6 flex-1 px-4 xl:px-6 space-y-2">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`group flex items-center px-2 xl:px-3 py-2 xl:py-3 text-sm lg:text-base font-medium rounded-md transition-colors duration-200 ${
+                    className={`group flex items-center px-4 xl:px-5 py-3 xl:py-4 text-base lg:text-lg font-medium rounded-xl transition-all duration-300 ${
                       isActive(item.href)
-                        ? 'bg-primary-100 text-primary-900'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-medium'
+                        : 'text-secondary-700 hover:bg-gradient-to-r hover:from-primary-50 hover:to-primary-100 hover:text-primary-700'
                     }`}
                   >
-                    <Icon className="mr-3 xl:mr-4 h-5 w-5 lg:h-6 lg:w-6 flex-shrink-0" />
+                    <Icon className={`mr-4 xl:mr-5 h-6 w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${
+                      isActive(item.href) ? 'text-white' : 'text-secondary-400 group-hover:text-primary-600'
+                    }`} />
                     {item.name}
                   </Link>
                 );
@@ -144,11 +150,11 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="md:pl-16 lg:pl-64 xl:pl-72 flex flex-col flex-1">
-        <div className="sticky top-0 z-10 md:hidden pl-1 pt-1 sm:pl-3 sm:pt-3 bg-gray-50 border-b border-gray-200 shadow-sm">
+      <div className="md:pl-20 lg:pl-72 xl:pl-80 flex flex-col flex-1">
+        <div className="sticky top-0 z-10 md:hidden pl-2 pt-2 sm:pl-4 sm:pt-4 bg-white/80 backdrop-blur-md border-b border-secondary-200 shadow-soft">
           <div className="flex items-center justify-between h-16">
             <button
-              className="-ml-0.5 -mt-0.5 h-12 w-12 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 active:bg-gray-100 transition-colors"
+              className="h-12 w-12 inline-flex items-center justify-center rounded-xl text-secondary-500 hover:text-primary-600 hover:bg-primary-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 active:bg-primary-100 transition-all duration-300"
               onClick={() => setSidebarOpen(true)}
             >
               <Bars3Icon className="h-6 w-6" />
@@ -161,7 +167,7 @@ const Layout = ({ children }) => {
           </div>
         </div>
         <main className="flex-1">
-          <div className="py-4 sm:py-6 lg:py-8">
+          <div className="py-6 sm:py-8 lg:py-10">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12">
               {children}
             </div>
