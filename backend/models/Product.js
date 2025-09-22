@@ -63,8 +63,7 @@ productSchema.virtual('stockStatus').get(function() {
   return 'in_stock';
 });
 
-// Indexes for performance
-productSchema.index({ sku: 1 });
+// Indexes for performance (SKU already has unique index from schema)
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ supplier: 1 });
 productSchema.index({ quantity: 1 });

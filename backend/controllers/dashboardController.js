@@ -209,11 +209,11 @@ exports.getReorderSuggestions = async (req, res) => {
     `;
     
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
-      
+
       // Parse the AI response
       const cleanedText = text.replace(/```json|```/g, '').trim();
       let suggestions;
